@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JStout Collectibles — Card Lookup, Marketplace & Stats</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:    #E31837;
+  --dark:   #111;
+  --card:   #fff;
+  --gold:   #FFD700;
+  --blue:   #003087;
+  --border: rgba(0,0,0,0.12);
+  --text:   #1a1a1a;
+  --muted:  #666;
+  --panel:  rgba(255,255,255,0.92);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+/* ── CARD COLLAGE BACKGROUND ── */
+body {
+  font-family:'Inter',sans-serif;
+  color:var(--text);
+  background:#e8e0d0;
+  min-height:100vh;
+  position:relative;
+}
+
+.collage-bg {
+  position:fixed; inset:0; z-index:0;
+  overflow:hidden; pointer-events:none;
+}
+.bg-card {
+  position:absolute;
+  width:72px; height:100px;
+  border-radius:4px;
+  border:2px solid rgba(0,0,0,0.15);
+  background:linear-gradient(135deg,#f5f0e0 0%,#ede5d0 100%);
+  box-shadow:2px 3px 8px rgba(0,0,0,0.18);
+  opacity:0.45;
+}
+/* Vintage card inner stripe patterns */
+.bg-card::before {
+  content:'';position:absolute;inset:5px;
+  border:1px solid rgba(0,0,0,0.12);
+  border-radius:2px;
+}
+.bg-card.red-top    { background:linear-gradient(180deg,#d42020 0,#d42020 22%,#f5f0e0 22%); }
+.bg-card.blue-top   { background:linear-gradient(180deg,#003087 0,#003087 22%,#f0f4f8 22%); }
+.bg-card.gold-top   { background:linear-gradient(180deg,#b8952a 0,#b8952a 22%,#f5f0e0 22%); }
+.bg-card.green-top  { background:linear-gradient(180deg,#1a6b2e 0,#1a6b2e 22%,#f0f5f0 22%); }
+.bg-card.stripe     { background:repeating-linear-gradient(0deg,#f0ece0 0,#f0ece0 8px,#e0d8c8 8px,#e0d8c8 9px); }
+
+/* Scatter positions */
+.bc1  {top:2%;left:1%;transform:rotate(-14deg)}
+.bc2  {top:8%;left:5%;transform:rotate(8deg)}
+.bc3  {top:1%;left:10%;transform:rotate(-3deg)}
+.bc4  {top:5%;left:16%;transform:rotate(18deg)}
+.bc5  {top:0%;left:22%;transform:rotate(-9deg)}
+.bc6  {top:6%;left:28%;transform:rotate(5deg)}
+.bc7  {top:2%;left:35%;transform:rotate(-20deg)}
+.bc8  {top:7%;left:42%;transform:rotate(12deg)}
+.bc9  {top:1%;left:50%;transform:rotate(-6deg)}
+.bc10 {top:5%;left:58%;transform:rotate(16deg)}
+.bc11 {top:2%;left:65%;transform:rotate(-11deg)}
+.bc12 {top:8%;left:72%;transform:rotate(7deg)}
+.bc13 {top:1%;left:79%;transform:rotate(-17deg)}
+.bc14 {top:5%;left:86%;transform:rotate(9deg)}
+.bc15 {top:2%;left:93%;transform:rotate(-4deg)}
+.bc16 {bottom:2%;left:3%;transform:rotate(11deg)}
+.bc17 {bottom:5%;left:12%;transform:rotate(-8deg)}
+.bc18 {bottom:1%;left:21%;transform:rotate(15deg)}
+.bc19 {bottom:6%;left:31%;transform:rotate(-13deg)}
+.bc20 {bottom:2%;left:40%;transform:rotate(6deg)}
+.bc21 {bottom:4%;left:50%;transform:rotate(-18deg)}
+.bc22 {bottom:1%;left:60%;transform:rotate(10deg)}
+.bc23 {bottom:5%;left:70%;transform:rotate(-5deg)}
+.bc24 {bottom:2%;left:80%;transform:rotate(14deg)}
+.bc25 {bottom:4%;left:90%;transform:rotate(-9deg)}
+
+/* Frosted overlay */
+.collage-overlay {
+  position:fixed; inset:0; z-index:1;
+  background:rgba(240,234,220,0.82);
+  backdrop-filter:blur(1px);
+}
+
+/* Everything above the collage */
+.page-wrap { position:relative; z-index:2; }
+
+/* ── NAV ── */
+nav {
+  background:rgba(0,0,0,0.95);
+  border-bottom:3px solid var(--red);
+  padding:0 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  height:60px; position:sticky; top:0; z-index:200;
+  backdrop-filter:blur(8px);
+}
+.nav-logo img { height:38px; }
+.nav-links { display:flex; gap:24px; }
+.nav-links a {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:14px; font-weight:700; letter-spacing:2px;
+  text-transform:uppercase; color:#bbb; text-decoration:none;
+  transition:color 0.15s;
+}
+.nav-links a:hover { color:var(--red); }
+.nav-cta {
+  background:var(--red); color:#fff;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; padding:8px 18px;
+  border:none; border-radius:4px; cursor:pointer;
+}
+
+/* ── MAIN DASHBOARD GRID ── */
+.dashboard {
+  display:grid;
+  grid-template-columns:300px 1fr 300px;
+  gap:16px;
+  padding:16px 20px;
+  max-width:1440px; margin:0 auto;
+}
+@media(max-width:1100px) { .dashboard { grid-template-columns:1fr; } }
+
+/* ── PANELS ── */
+.panel {
+  background:var(--panel);
+  border:1px solid rgba(0,0,0,0.1);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 2px 16px rgba(0,0,0,0.1);
+}
+.panel-head {
+  background:#111; color:#fff;
+  padding:8px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.panel-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase;
+}
+.panel-tag {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; color:rgba(255,255,255,0.4);
+}
+.panel-body { padding:12px; }
+
+/* ── LEFT COLUMN ── */
+.left-col { display:flex; flex-direction:column; gap:14px; }
+
+/* Rookie stats table */
+.stats-table { width:100%; border-collapse:collapse; font-size:11px; }
+.stats-table th {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+  padding:5px 6px; text-align:right; border-bottom:2px solid #eee;
+}
+.stats-table th:first-child { text-align:left; }
+.stats-table td {
+  padding:6px 6px; text-align:right;
+  border-bottom:1px solid #f0f0f0; font-size:11px;
+}
+.stats-table td:first-child { text-align:left; font-weight:600; }
+.stats-table tr:hover td { background:#fafafa; }
+.player-name { font-weight:700; color:#111; font-size:11px; }
+.player-team { font-size:9px; color:#999; display:block; }
+
+/* Scores */
+.score-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:7px 0; border-bottom:1px solid #f0f0f0; font-size:11px;
+}
+.score-row:last-child { border:none; }
+.score-teams { flex:1; }
+.score-team { display:flex; justify-content:space-between; }
+.score-name { font-weight:600; font-size:11px; }
+.score-num { font-weight:800; font-size:13px; color:#111; }
+.score-num.winning { color:var(--red); }
+.score-status {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted);
+  text-align:right; min-width:44px;
+}
+.score-live { color:var(--red); animation:blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.reds-game .score-name { color:var(--red); }
+
+/* ── CENTER HERO — CARD LOOKUP ── */
+.hero-lookup {
+  display:flex; flex-direction:column;
+}
+.hero-top {
+  background:linear-gradient(135deg,#111 0%,#1a0005 60%,#111 100%);
+  padding:32px 28px 28px;
+  text-align:center;
+  position:relative; overflow:hidden;
+  border-radius:10px 10px 0 0;
+}
+.hero-top::before {
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(227,24,55,0.15),transparent 70%);
+}
+.hero-badge {
+  display:inline-block;
+  background:var(--red); color:#fff;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:10px; font-weight:800; letter-spacing:3px;
+  text-transform:uppercase; padding:4px 14px; border-radius:2px;
+  margin-bottom:16px; position:relative;
+}
+.hero-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(36px,4.5vw,62px);
+  font-weight:900; text-transform:uppercase; color:#fff;
+  line-height:0.9; letter-spacing:-1px; position:relative;
+}
+.hero-title em { color:var(--red); font-style:normal; }
+.hero-sub {
+  font-size:13px; color:rgba(255,255,255,0.55);
+  margin:12px 0 0; position:relative;
+}
+
+/* Lookup area */
+.lookup-area {
+  background:#fff; padding:20px 24px;
+}
+.tab-row {
+  display:flex; gap:0; margin-bottom:18px;
+  border:1px solid #ddd; border-radius:6px; overflow:hidden;
+  width:fit-content;
+}
+.tab {
+  padding:9px 20px;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; cursor:pointer;
+  background:#f8f8f8; color:#999; border:none;
+  transition:all 0.15s;
+}
+.tab.active { background:var(--red); color:#fff; }
+
+.drop-zone {
+  border:2px dashed #ddd; border-radius:8px;
+  padding:32px 20px; text-align:center; cursor:pointer;
+  transition:all 0.2s; background:#fafafa;
+}
+.drop-zone:hover,.drop-zone.dragging { border-color:var(--red); background:rgba(227,24,55,0.03); }
+.dz-icon { font-size:36px; margin-bottom:10px; }
+.dz-title { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; color:#333; }
+.dz-sub { font-size:11px; color:#aaa; margin-top:4px; }
+#photo-preview { max-width:160px; border-radius:6px; margin-top:12px; display:none; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+
+.lookup-input-row { display:flex; gap:10px; }
+.lookup-input {
+  flex:1; background:#f8f8f8; border:1px solid #ddd; border-radius:6px;
+  color:#111; font-family:'Inter',sans-serif; font-size:14px;
+  padding:11px 14px; outline:none; transition:border-color 0.2s;
+}
+.lookup-input:focus { border-color:var(--red); background:#fff; }
+.lookup-input::placeholder { color:#bbb; }
+.btn-red {
+  background:var(--red); color:#fff; border:none;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:13px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; padding:11px 22px;
+  border-radius:6px; cursor:pointer; transition:opacity 0.15s;
+  flex-shrink:0;
+}
+.btn-red:hover { opacity:0.88; }
+.btn-red:disabled { opacity:0.4; cursor:not-allowed; }
+
+.lookup-panel { display:none; }
+.lookup-panel.active { display:block; }
+
+/* Value lookup strip */
+.value-strip {
+  background:#111; padding:14px 20px;
+  border-radius:0 0 10px 10px;
+}
+.value-strip-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; color:#888; margin-bottom:10px;
+}
+.value-links { display:flex; flex-wrap:wrap; gap:8px; }
+.value-link {
+  background:#222; border:1px solid #333; border-radius:4px;
+  padding:6px 14px; font-size:11px; color:#ccc; text-decoration:none;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+  transition:all 0.15s; cursor:pointer;
+}
+.value-link:hover { background:#333; color:#fff; border-color:var(--red); }
+.value-link .vi { margin-right:5px; }
+
+/* ── RIGHT COLUMN ── */
+.right-col { display:flex; flex-direction:column; gap:14px; }
+
+/* Team schedule */
+.game-row {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:11px;
+}
+.game-row:last-child { border:none; }
+.game-date {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px; font-weight:800; color:var(--muted);
+  min-width:52px;
+}
+.game-matchup { flex:1; }
+.game-opp {
+  font-weight:700; font-size:12px; color:#111;
+  display:flex; align-items:center; gap:6px;
+}
+.game-loc { font-size:9px; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+.game-time { font-size:10px; color:var(--muted); }
+.game-result { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:14px; }
+.game-result.w { color:#1a6b2e; }
+.game-result.l { color:var(--red); }
+.vs-badge {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:8px; font-weight:700; letter-spacing:1px;
+  background:#f0f0f0; color:#888; padding:1px 5px;
+  border-radius:2px; text-transform:uppercase;
+}
+
+/* Standings mini */
+.record-block {
+  display:flex; gap:20px; padding:10px 0;
+  border-bottom:1px solid #f0f0f0;
+}
+.record-item { text-align:center; }
+.record-val {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px; font-weight:900; color:#111; line-height:1;
+}
+.record-val.red { color:var(--red); }
+.record-lbl { font-size:9px; color:#aaa; letter-spacing:1px; text-transform:uppercase; margin-top:2px; }
+
+/* Twitter / X embeds */
+.twitter-panel .panel-body { padding:0; overflow:hidden; max-height:420px; overflow-y:auto; }
+
+/* Release calendar */
+.release-row {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:11px;
+}
+.release-row:last-child { border:none; }
+.release-date {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px; font-weight:800; color:var(--muted); min-width:68px;
+}
+.release-name { flex:1; font-weight:600; font-size:11px; color:#111; }
+.release-brand {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:1px;
+  text-transform:uppercase; padding:2px 7px; border-radius:2px;
+}
+.brand-topps  { background:rgba(227,24,55,0.12); color:var(--red); }
+.brand-bowman { background:rgba(0,48,135,0.1); color:var(--blue); }
+.brand-panini { background:rgba(26,107,46,0.1); color:#1a6b2e; }
+.hot-badge {
+  font-size:10px; margin-left:4px;
+}
+
+/* ── SECOND ROW — social / releases ── */
+.second-row {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:16px;
+  padding:0 20px 16px;
+  max-width:1440px; margin:0 auto;
+}
+@media(max-width:1100px) { .second-row { grid-template-columns:1fr; } }
+
+/* ── MARKETPLACE ── */
+.section {
+  max-width:1440px; margin:0 auto;
+  padding:0 20px 20px;
+}
+.section-head {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.section-title {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:22px; font-weight:900; text-transform:uppercase;
+  color:#111; letter-spacing:1px;
+}
+.section-tag {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:9px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase;
+  background:var(--red); color:#fff;
+  padding:3px 10px; border-radius:2px;
+}
+.listing-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:14px;
+}
+.listing-card {
+  background:#fff; border:1px solid #e0e0e0;
+  border-radius:8px; overflow:hidden;
+  transition:border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow:0 1px 6px rgba(0,0,0,0.07);
+}
+.listing-card:hover { border-color:var(--red); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.12); }
+.listing-img { height:120px; background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:36px; }
+.listing-body { padding:12px; }
+.listing-title { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:800; text-transform:uppercase; color:#111; margin-bottom:3px; line-height:1.1; }
+.listing-meta { font-size:10px; color:#aaa; margin-bottom:8px; }
+.listing-price { font-family:'Barlow Condensed',sans-serif; font-size:22px; font-weight:900; color:#111; }
+.listing-cond { font-size:9px; color:#888; letter-spacing:1px; text-transform:uppercase; margin-left:6px; }
+.listing-buy {
+  width:100%; margin-top:10px;
+  background:var(--red); color:#fff; border:none;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:12px; font-weight:800; letter-spacing:2px;
+  text-transform:uppercase; padding:9px; border-radius:4px;
+  cursor:pointer; transition:opacity 0.15s;
+}
+.listing-buy:hover { opacity:0.88; }
+.stripe-soon { font-size:9px; color:#bbb; text-align:center; margin-top:4px; }
+.empty-mp { text-align:center; padding:36px; color:#bbb; font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:700; text-transform:uppercase; letter-spacing:2px; grid-column:1/-1; }
+
+/* Sell form, newsletter — compact */
+.two-col-section {
+  display:grid; grid-template-columns:1fr 1fr; gap:16px;
+  max-width:1440px; margin:0 auto; padding:0 20px 20px;
+}
+@media(max-width:900px) { .two-col-section { grid-template-columns:1fr; } }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+.form-grid .full { grid-column:1/-1; }
+.form-label { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#888; display:block; margin-bottom:4px; }
+.form-input {
+  width:100%; background:#f8f8f8; border:1px solid #ddd; border-radius:5px;
+  color:#111; font-family:'Inter',sans-serif; font-size:13px;
+  padding:9px 12px; outline:none; transition:border-color 0.2s;
+}
+.form-input:focus { border-color:var(--red); background:#fff; }
+.form-input::placeholder { color:#bbb; }
+.form-input option { background:#fff; }
+
+/* Newsletter */
+.nl-box {
+  background:linear-gradient(135deg,#111 0%,#1a0005 100%);
+  border-radius:10px; padding:28px;
+  box-shadow:0 2px 16px rgba(0,0,0,0.15);
+}
+.nl-title { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:900; text-transform:uppercase; color:#fff; margin-bottom:6px; }
+.nl-sub { font-size:12px; color:rgba(255,255,255,0.5); line-height:1.6; margin-bottom:18px; }
+.nl-form { display:flex; gap:10px; }
+.nl-input {
+  flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+  color:#fff; font-family:'Inter',sans-serif; font-size:13px;
+  padding:11px 14px; border-radius:5px; outline:none;
+  transition:border-color 0.2s;
+}
+.nl-input:focus { border-color:var(--red); }
+.nl-input::placeholder { color:rgba(255,255,255,0.25); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.75);
+  z-index:500; display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:#0f0f0f; border:1px solid #2a2a2a; border-top:4px solid var(--red);
+  border-radius:12px; padding:28px; max-width:520px; width:100%;
+  position:relative; max-height:90vh; overflow-y:auto;
+}
+.modal-close { position:absolute; top:12px; right:14px; background:none; border:none; color:#666; font-size:20px; cursor:pointer; }
+.modal-close:hover { color:#fff; }
+.modal-badge {
+  display:inline-block; background:var(--red); color:#fff;
+  font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:800;
+  letter-spacing:3px; text-transform:uppercase; padding:3px 12px; border-radius:2px; margin-bottom:12px;
+}
+.modal-player { font-family:'Barlow Condensed',sans-serif; font-size:34px; font-weight:900; text-transform:uppercase; color:#fff; line-height:1; margin-bottom:4px; }
+.modal-set { font-size:12px; color:#666; margin-bottom:18px; font-style:italic; }
+.modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.modal-field { background:#1a1a1a; border-radius:5px; padding:10px 12px; }
+.modal-field-lbl { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#555; margin-bottom:3px; }
+.modal-field-val { font-size:13px; font-weight:600; color:#fff; }
+.modal-val-box { background:rgba(227,24,55,0.1); border:1px solid rgba(227,24,55,0.25); border-radius:7px; padding:14px; margin-bottom:14px; text-align:center; }
+.modal-val-lbl { font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:rgba(227,24,55,0.7); margin-bottom:3px; }
+.modal-val-num { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:900; color:var(--gold); }
+.modal-notable { font-size:11px; color:#aaa; line-height:1.6; border-left:3px solid var(--red); padding-left:10px; margin-bottom:16px; }
+.rookie-badge { display:inline-block; background:var(--gold); color:#000; font-family:'Barlow Condensed',sans-serif; font-size:9px; font-weight:900; letter-spacing:2px; text-transform:uppercase; padding:2px 8px; border-radius:2px; margin-left:6px; }
+
+/* spinner */
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.2); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* footer */
+footer {
+  background:#000; border-top:3px solid var(--red); padding:18px 24px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; z-index:2;
+}
+.footer-brand { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:#555; }
+.footer-brand span { color:var(--red); }
+.footer-links { display:flex; gap:18px; }
+.footer-links a { font-size:10px; color:#444; text-decoration:none; letter-spacing:1px; text-transform:uppercase; }
+.footer-links a:hover { color:var(--red); }
+
+/* Loading skeleton */
+.skeleton { background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; border-radius:3px; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+</head>
+<body>
+
+<!-- CARD COLLAGE BACKGROUND -->
+<div class="collage-bg">
+  <div class="bg-card red-top  bc1"></div>
+  <div class="bg-card blue-top bc2"></div>
+  <div class="bg-card         bc3"></div>
+  <div class="bg-card stripe  bc4"></div>
+  <div class="bg-card gold-top bc5"></div>
+  <div class="bg-card blue-top bc6"></div>
+  <div class="bg-card red-top  bc7"></div>
+  <div class="bg-card         bc8"></div>
+  <div class="bg-card stripe  bc9"></div>
+  <div class="bg-card green-top bc10"></div>
+  <div class="bg-card red-top  bc11"></div>
+  <div class="bg-card blue-top bc12"></div>
+  <div class="bg-card gold-top bc13"></div>
+  <div class="bg-card         bc14"></div>
+  <div class="bg-card stripe  bc15"></div>
+  <div class="bg-card red-top  bc16"></div>
+  <div class="bg-card blue-top bc17"></div>
+  <div class="bg-card green-top bc18"></div>
+  <div class="bg-card         bc19"></div>
+  <div class="bg-card stripe  bc20"></div>
+  <div class="bg-card gold-top bc21"></div>
+  <div class="bg-card red-top  bc22"></div>
+  <div class="bg-card blue-top bc23"></div>
+  <div class="bg-card         bc24"></div>
+  <div class="bg-card stripe  bc25"></div>
+</div>
+<div class="collage-overlay"></div>
+
+<div class="page-wrap">
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><img src="/static/images/logo.svg" alt="JStout Collectibles"></div>
+  <div class="nav-links">
+    <a href="#lookup">Lookup</a>
+    <a href="#marketplace">Marketplace</a>
+    <a href="#sell">Sell</a>
+    <a href="#newsletter">Newsletter</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('sell').scrollIntoView({behavior:'smooth'})">List a Card</button>
+</nav>
+
+<!-- MAIN 3-COL DASHBOARD -->
+<div class="dashboard">
+
+  <!-- LEFT: Rookie Stats + Today's Scores -->
+  <div class="left-col">
+
+    <!-- MLB Rookie Stats -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">⭐ 2026 MLB Rookie Watch</span>
+        <span class="panel-tag">Live</span>
+      </div>
+      <div class="panel-body" style="padding:8px 12px;">
+        <table class="stats-table" id="rookies-table">
+          <thead><tr>
+            <th>Player</th><th>AVG</th><th>HR</th><th>RBI</th><th>OPS</th>
+          </tr></thead>
+          <tbody id="rookies-body">
+            <tr><td colspan="5"><div class="skeleton" style="height:12px;margin:4px 0;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="height:12px;margin:4px 0;"></div></td></tr>
+            <tr><td colspan="5"><div class="skeleton" style="height:12px;margin:4px 0;"></div></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:9px;color:#bbb;margin-top:6px;text-align:right;">Source: MLB Stats API · 2026 Season</div>
+      </div>
+    </div>
+
+    <!-- Today's MLB Scores -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">📊 Today's Scores</span>
+        <span class="panel-tag" id="scores-date">June 8</span>
+      </div>
+      <div class="panel-body" style="padding:8px 12px;">
+        <div id="scores-body">
+          <div class="skeleton" style="height:32px;margin:4px 0;border-radius:4px;"></div>
+          <div class="skeleton" style="height:32px;margin:4px 0;border-radius:4px;"></div>
+          <div class="skeleton" style="height:32px;margin:4px 0;border-radius:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER: CARD LOOKUP HERO -->
+  <div class="panel hero-lookup" id="lookup">
+    <div class="hero-top">
+      <div class="hero-badge">AI Vision · Instant ID</div>
+      <div class="hero-title">Find Your<br><em>Card's Value</em></div>
+      <p class="hero-sub">Photo or card number — we'll identify it and find the price.</p>
+    </div>
+
+    <div class="lookup-area">
+      <div class="tab-row">
+        <button class="tab active" onclick="switchTab('photo')">📸 Photo Upload</button>
+        <button class="tab" onclick="switchTab('text')">🔢 Card Number / Name</button>
+      </div>
+
+      <!-- Photo -->
+      <div class="lookup-panel active" id="panel-photo">
+        <div class="drop-zone" id="drop-zone"
+          onclick="document.getElementById('file-input').click()"
+          ondragover="event.preventDefault();this.classList.add('dragging')"
+          ondragleave="this.classList.remove('dragging')"
+          ondrop="handleDrop(event)">
+          <div class="dz-icon">🃏</div>
+          <div class="dz-title">Drop a card photo here</div>
+          <div class="dz-sub">or click to browse · JPG, PNG, WEBP</div>
+          <img id="photo-preview" alt="">
+        </div>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+        <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+          <button class="btn-red" id="identify-btn" onclick="identifyCard()" disabled>Identify Card</button>
+          <span id="identify-status" style="font-size:11px;color:#aaa;"></span>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div class="lookup-panel" id="panel-text">
+        <div class="lookup-input-row">
+          <input class="lookup-input" id="lookup-query" type="text"
+            placeholder="e.g. 2011 Topps Update #US175  or  Mike Trout rookie"
+            onkeydown="if(event.key==='Enter')lookupCard()">
+          <button class="btn-red" id="lookup-btn" onclick="lookupCard()">Look Up</button>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#bbb;">Try: player name · year + set + # · "rookie" + player · PSA graded card</div>
+      </div>
+
+      <!-- Value search strip -->
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #eee;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#aaa;margin-bottom:8px;">
+          Search values on
+        </div>
+        <div id="value-links" class="value-links" style="display:flex;flex-wrap:wrap;gap:8px;">
+          <a class="value-link" href="#" onclick="openValue('ebay-sold',event)"><span class="vi">🛒</span>eBay Sold</a>
+          <a class="value-link" href="#" onclick="openValue('ebay-active',event)"><span class="vi">📦</span>eBay Active</a>
+          <a class="value-link" href="#" onclick="openValue('beckett',event)"><span class="vi">📊</span>Beckett</a>
+          <a class="value-link" href="#" onclick="openValue('fanatics',event)"><span class="vi">🏆</span>Fanatics</a>
+          <a class="value-link" href="#" onclick="openValue('fb',event)"><span class="vi">📘</span>FB Marketplace</a>
+          <a class="value-link" href="#" onclick="openValue('130pt',event)"><span class="vi">💎</span>130 Point</a>
+        </div>
+        <div style="margin-top:8px;">
+          <input id="value-query" class="lookup-input" style="font-size:12px;padding:8px 12px;" type="text" placeholder="Card to price-check...">
+        </div>
+      </div>
+    </div>
+
+    <!-- Value lookup dark footer -->
+    <div style="background:#f8f8f8;padding:12px 24px;border-top:1px solid #eee;font-size:10px;color:#bbb;text-align:center;">
+      Powered by Claude AI Vision · eBay · Beckett · Fanatics · 130 Point
+    </div>
+  </div>
+
+  <!-- RIGHT: Reds Info -->
+  <div class="right-col">
+
+    <!-- Reds record + standings -->
+    <div class="panel">
+      <div class="panel-head" style="background:#c6011f;">
+        <span class="panel-title">🔴 Cincinnati Reds</span>
+        <span class="panel-tag">NL Central</span>
+      </div>
+      <div class="panel-body">
+        <div class="record-block" id="reds-record">
+          <div class="record-item"><div class="record-val red skeleton" style="width:52px;height:28px;"></div><div class="record-lbl">W-L</div></div>
+          <div class="record-item"><div class="record-val skeleton" style="width:40px;height:28px;"></div><div class="record-lbl">GB</div></div>
+          <div class="record-item"><div class="record-val skeleton" style="width:44px;height:28px;"></div><div class="record-lbl">PCT</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reds Schedule / Lines -->
+    <div class="panel">
+      <div class="panel-head" style="background:#c6011f;">
+        <span class="panel-title">📅 Schedule &amp; Lines</span>
+        <span class="panel-tag">Next 8</span>
+      </div>
+      <div class="panel-body" style="padding:8px 12px;">
+        <div id="reds-schedule">
+          <div class="skeleton" style="height:30px;margin:4px 0;border-radius:4px;"></div>
+          <div class="skeleton" style="height:30px;margin:4px 0;border-radius:4px;"></div>
+          <div class="skeleton" style="height:30px;margin:4px 0;border-radius:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topps X feed -->
+    <div class="panel twitter-panel">
+      <div class="panel-head">
+        <span class="panel-title">𝕏 Topps Official</span>
+        <span class="panel-tag">@Topps</span>
+      </div>
+      <div class="panel-body" style="padding:0;max-height:320px;overflow:hidden;">
+        <a class="twitter-timeline"
+          data-height="320"
+          data-theme="light"
+          data-chrome="noheader nofooter noborders"
+          href="https://twitter.com/Topps?ref_src=twsrc%5Etfw">
+          Tweets by Topps
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /dashboard -->
+
+<!-- SECOND ROW: Reds X feed + Release Calendar + Team News -->
+<div class="second-row">
+
+  <!-- Reds X feed -->
+  <div class="panel twitter-panel">
+    <div class="panel-head" style="background:#c6011f;">
+      <span class="panel-title">𝕏 Reds News</span>
+      <span class="panel-tag">@Reds</span>
+    </div>
+    <div class="panel-body" style="padding:0;max-height:380px;overflow:hidden;">
+      <a class="twitter-timeline"
+        data-height="380"
+        data-theme="light"
+        data-chrome="noheader nofooter noborders"
+        href="https://twitter.com/Reds?ref_src=twsrc%5Etfw">
+        Tweets by Reds
+      </a>
+    </div>
+  </div>
+
+  <!-- Release Calendar -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">📆 Release Calendar</span>
+      <span class="panel-tag">Upcoming</span>
+    </div>
+    <div class="panel-body" style="padding:10px 14px;">
+      <div id="release-calendar">
+        <div class="skeleton" style="height:28px;margin:4px 0;border-radius:4px;"></div>
+        <div class="skeleton" style="height:28px;margin:4px 0;border-radius:4px;"></div>
+        <div class="skeleton" style="height:28px;margin:4px 0;border-radius:4px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hobby & Collector News feed -->
+  <div class="panel">
+    <div class="panel-head">
+      <span class="panel-title">📰 Hobby News</span>
+      <span class="panel-tag">Collectibles</span>
+    </div>
+    <div class="panel-body" style="padding:0;max-height:380px;overflow:hidden;">
+      <a class="twitter-timeline"
+        data-height="380"
+        data-theme="light"
+        data-chrome="noheader nofooter noborders"
+        href="https://twitter.com/BeckettMedia?ref_src=twsrc%5Etfw">
+        Tweets by BeckettMedia
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- MARKETPLACE -->
+<div class="section" id="marketplace">
+  <div class="section-head">
+    <div class="section-title">🃏 Marketplace</div>
+    <span class="section-tag">Buy Cards</span>
+  </div>
+  <div class="listing-grid" id="listing-grid">
+    {% if listings %}
+      {% for item in listings %}
+      <div class="listing-card">
+        <div class="listing-img">🃏</div>
+        <div class="listing-body">
+          <div class="listing-title">{{ item.title }}</div>
+          <div class="listing-meta">{{ [item.player, item.year, item.brand]|select|join(' · ') }}</div>
+          <div><span class="listing-price">${{ "%.2f"|format(item.price) }}</span><span class="listing-cond">{{ item.condition }}</span></div>
+          <button class="listing-buy">🛒 Buy Now</button>
+          <div class="stripe-soon">Stripe · coming soon</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-mp">No listings yet — be the first to sell!</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SELL + NEWSLETTER -->
+<div class="two-col-section">
+
+  <!-- Sell form -->
+  <div class="panel" id="sell">
+    <div class="panel-head"><span class="panel-title">💰 List Your Card</span></div>
+    <div class="panel-body">
+      <div class="form-grid">
+        <div class="full"><label class="form-label">Title *</label><input id="f-title" class="form-input" type="text" placeholder="2011 Topps Update Mike Trout RC #US175 PSA 9"></div>
+        <div><label class="form-label">Player</label><input id="f-player" class="form-input" type="text" placeholder="Mike Trout"></div>
+        <div><label class="form-label">Year</label><input id="f-year" class="form-input" type="text" placeholder="2011"></div>
+        <div><label class="form-label">Brand</label><input id="f-brand" class="form-input" type="text" placeholder="Topps"></div>
+        <div><label class="form-label">Card #</label><input id="f-cardnum" class="form-input" type="text" placeholder="US175"></div>
+        <div><label class="form-label">Price * ($)</label><input id="f-price" class="form-input" type="number" step="0.01" placeholder="49.99"></div>
+        <div><label class="form-label">Condition *</label>
+          <select id="f-cond" class="form-input">
+            <option value="">Select...</option>
+            <option>Raw - Gem Mint</option><option>Raw - Near Mint</option>
+            <option>PSA 10</option><option>PSA 9</option><option>PSA 8</option>
+            <option>BGS 9.5</option><option>BGS 9</option><option>SGC 10</option>
+          </select>
+        </div>
+        <div class="full"><label class="form-label">Email *</label><input id="f-email" class="form-input" type="email" placeholder="you@email.com"></div>
+        <div class="full"><button class="btn-red" style="width:100%;font-size:14px;padding:12px;" onclick="listItem()">Submit Listing</button></div>
+      </div>
+      <div id="list-msg" style="margin-top:10px;font-size:12px;display:none;font-style:italic;"></div>
+    </div>
+  </div>
+
+  <!-- Newsletter -->
+  <div id="newsletter">
+    <div class="nl-box">
+      <div style="font-size:22px;margin-bottom:10px;">📬</div>
+      <div class="nl-title">JStout Collectibles Newsletter</div>
+      <p class="nl-sub">Market updates · New listings · Hot rookie cards · Hobby news · Release alerts. No spam.</p>
+      <div class="nl-form">
+        <input class="nl-input" type="email" id="nl-email" placeholder="your@email.com"
+          onkeydown="if(event.key==='Enter')nlSubscribe()">
+        <button class="btn-red" onclick="nlSubscribe()">Subscribe</button>
+      </div>
+      <div id="nl-msg" style="margin-top:12px;font-size:12px;color:#aaa;display:none;font-style:italic;"></div>
+    </div>
+
+    <!-- Stripe placeholder -->
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:20px;margin-top:16px;text-align:center;box-shadow:0 1px 6px rgba(0,0,0,0.07);">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:10px;">Stripe Payments — Coming Soon</div>
+      <div style="display:flex;justify-content:center;gap:12px;opacity:0.4;">
+        <div style="background:#635bff;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;padding:6px 18px;border-radius:4px;">Stripe</div>
+        <div style="background:#003087;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;padding:6px 16px;border-radius:4px;">PayPal</div>
+        <div style="background:#000;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;padding:6px 16px;border-radius:4px;"> Pay</div>
+      </div>
+      <div style="font-size:10px;color:#bbb;margin-top:10px;">Add your Stripe keys in .env to activate checkout</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand"><span>JStout</span>Collectibles &nbsp;·&nbsp; JStoutSolutions.com</div>
+  <div style="font-size:10px;color:#444;font-style:italic;">Data: MLB Stats API · eBay · Beckett · Fanatics · 130 Point</div>
+  <div class="footer-links">
+    <a href="#">Privacy</a><a href="#">Terms</a>
+    <a href="mailto:frostbytehero@gmail.com">Contact</a>
+  </div>
+</footer>
+
+</div><!-- /page-wrap -->
+
+<!-- CARD MODAL -->
+<div class="modal-overlay" id="card-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Twitter / X widget -->
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<script>
+// ── TABS ───────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='photo')||(i===1&&tab==='text')));
+  document.getElementById('panel-photo').classList.toggle('active',tab==='photo');
+  document.getElementById('panel-text').classList.toggle('active',tab==='text');
+}
+
+// ── FILE HANDLING ──────────────────────────────────────────────────────────
+let selectedFile=null;
+function handleFileSelect(e){const f=e.target.files[0];if(f)setFile(f);}
+function handleDrop(e){e.preventDefault();document.getElementById('drop-zone').classList.remove('dragging');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))setFile(f);}
+function setFile(f){
+  selectedFile=f;
+  const preview=document.getElementById('photo-preview');
+  const reader=new FileReader();
+  reader.onload=e=>{preview.src=e.target.result;preview.style.display='block';};
+  reader.readAsDataURL(f);
+  document.getElementById('identify-btn').disabled=false;
+  document.getElementById('identify-status').textContent=f.name;
+  // Pre-fill value query
+  document.getElementById('value-query').value='';
+}
+
+// ── IDENTIFY ───────────────────────────────────────────────────────────────
+async function identifyCard(){
+  if(!selectedFile)return;
+  const btn=document.getElementById('identify-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Identifying...';
+  const form=new FormData();form.append('image',selectedFile);
+  try{
+    const resp=await fetch('/api/identify-card',{method:'POST',body:form});
+    const data=await resp.json();
+    if(data.card){
+      showCardModal(data.card);
+      const q=`${data.card.year||''} ${data.card.brand||''} ${data.card.player||''} ${data.card.card_number?'#'+data.card.card_number:''}`.trim();
+      document.getElementById('value-query').value=q;
+    }else{document.getElementById('identify-status').textContent=data.error||'Could not identify.';}
+  }catch{document.getElementById('identify-status').textContent='Error — try again.';}
+  finally{btn.disabled=false;btn.textContent='Identify Card';}
+}
+
+// ── LOOKUP ─────────────────────────────────────────────────────────────────
+async function lookupCard(){
+  const q=document.getElementById('lookup-query').value.trim();
+  if(!q)return;
+  const btn=document.getElementById('lookup-btn');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    const resp=await fetch('/api/lookup-card',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+    const data=await resp.json();
+    if(data.card){
+      showCardModal(data.card);
+      document.getElementById('value-query').value=q;
+    }
+  }catch{alert('Lookup failed.');}
+  finally{btn.disabled=false;btn.textContent='Look Up';}
+}
+
+// ── VALUE LINKS ────────────────────────────────────────────────────────────
+const VALUE_URLS = {
+  'ebay-sold': q=>`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Sold=1&LH_Complete=1&_sop=13`,
+  'ebay-active': q=>`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(q)}&_sop=15`,
+  'beckett': q=>`https://www.beckett.com/search/?q=${encodeURIComponent(q)}`,
+  'fanatics': q=>`https://www.fanatics.com/search#query=${encodeURIComponent(q)}&categoryId=23`,
+  'fb': q=>`https://www.facebook.com/marketplace/search/?query=${encodeURIComponent(q+' card')}`,
+  '130pt': q=>`https://www.130point.com/sales/search?q=${encodeURIComponent(q)}`,
+};
+function openValue(source,e){
+  e.preventDefault();
+  const q=document.getElementById('value-query').value.trim()||document.getElementById('lookup-query').value.trim();
+  if(!q){document.getElementById('value-query').focus();return;}
+  window.open(VALUE_URLS[source](q),'_blank');
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────────
+function showCardModal(card){
+  const r=card.rookie_card?'<span class="rookie-badge">RC</span>':'';
+  const conf={'high':'#1a6b2e','medium':'#aa8800','low':'#888'}[card.confidence]||'#888';
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-badge">Card Identified &nbsp;· <span style="color:${conf};">${(card.confidence||'').toUpperCase()}</span></div>
+    <div class="modal-player">${card.player||'—'}${r}</div>
+    <div class="modal-set">${card.year||''} ${card.brand||''} ${card.set||''} ${card.card_number?'· #'+card.card_number:''}</div>
+    <div class="modal-val-box">
+      <div class="modal-val-lbl">Est. Market Value</div>
+      <div class="modal-val-num">${card.estimated_value||'Unknown'}</div>
+    </div>
+    <div class="modal-grid">
+      <div class="modal-field"><div class="modal-field-lbl">Sport</div><div class="modal-field-val">${card.sport||'—'}</div></div>
+      <div class="modal-field"><div class="modal-field-lbl">Team</div><div class="modal-field-val">${card.team||'—'}</div></div>
+      <div class="modal-field"><div class="modal-field-lbl">Condition</div><div class="modal-field-val">${card.condition||'—'}</div></div>
+      <div class="modal-field"><div class="modal-field-lbl">Card #</div><div class="modal-field-val">${card.card_number||'—'}</div></div>
+    </div>
+    ${card.notable?`<div class="modal-notable">${card.notable}</div>`:''}
+    <button class="btn-red" style="width:100%;margin-top:16px;" onclick="prefillSell('${(card.player||'').replace(/'/g,"\\'")}','${card.year||''}','${card.brand||''}','${card.card_number||''}');closeModal();">
+      List This Card for Sale →
+    </button>`;
+  document.getElementById('card-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('card-modal').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ── SELL FORM ──────────────────────────────────────────────────────────────
+function prefillSell(player,year,brand,num){
+  document.getElementById('f-player').value=player;
+  document.getElementById('f-year').value=year;
+  document.getElementById('f-brand').value=brand;
+  document.getElementById('f-cardnum').value=num;
+  if(player||year) document.getElementById('f-title').value=[year,brand,player,num?'#'+num:''].filter(Boolean).join(' ');
+  document.getElementById('sell').scrollIntoView({behavior:'smooth'});
+}
+async function listItem(){
+  const payload={
+    title:document.getElementById('f-title').value.trim(),
+    player:document.getElementById('f-player').value.trim(),
+    year:document.getElementById('f-year').value.trim(),
+    brand:document.getElementById('f-brand').value.trim(),
+    card_number:document.getElementById('f-cardnum').value.trim(),
+    price:document.getElementById('f-price').value,
+    condition:document.getElementById('f-cond').value,
+    seller_email:document.getElementById('f-email').value.trim(),
+  };
+  const msg=document.getElementById('list-msg');
+  msg.style.display='none';
+  if(!payload.title||!payload.price||!payload.condition||!payload.seller_email){
+    msg.style.display='block';msg.style.color='#E31837';msg.textContent='Fill in all required fields.';return;
+  }
+  const resp=await fetch('/api/list-item',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await resp.json();
+  msg.style.display='block';
+  if(data.status==='listed'){
+    msg.style.color='#1a6b2e';msg.textContent='Listed! ID: '+data.listing.id;
+    ['f-title','f-player','f-year','f-brand','f-cardnum','f-price','f-email'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-cond').value='';
+    loadListings();
+  }else{msg.style.color='#E31837';msg.textContent=data.error||'Error.';}
+}
+async function loadListings(){
+  const resp=await fetch('/api/listings');const data=await resp.json();
+  const grid=document.getElementById('listing-grid');
+  if(!data.listings?.length){grid.innerHTML='<div class="empty-mp">No listings yet — be the first to sell!</div>';return;}
+  grid.innerHTML=data.listings.map(i=>`
+    <div class="listing-card">
+      <div class="listing-img">🃏</div>
+      <div class="listing-body">
+        <div class="listing-title">${i.title}</div>
+        <div class="listing-meta">${[i.player,i.year,i.brand].filter(Boolean).join(' · ')}</div>
+        <div><span class="listing-price">$${parseFloat(i.price).toFixed(2)}</span><span class="listing-cond">${i.condition}</span></div>
+        <button class="listing-buy">🛒 Buy Now</button>
+        <div class="stripe-soon">Stripe · coming soon</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── NEWSLETTER ─────────────────────────────────────────────────────────────
+async function nlSubscribe(){
+  const email=document.getElementById('nl-email').value.trim();const msg=document.getElementById('nl-msg');
+  if(!email)return;msg.style.display='none';
+  const resp=await fetch('/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  const data=await resp.json();msg.style.display='block';
+  msg.textContent=data.status==='subscribed'?'✔ Subscribed! First issue coming soon.':data.status==='already_subscribed'?'Already subscribed.':data.error||'Error.';
+  if(data.status==='subscribed') document.getElementById('nl-email').value='';
+}
+
+// ── DATA LOADERS ───────────────────────────────────────────────────────────
+async function loadRookies(){
+  try{
+    const data=await fetch('/api/mlb/rookies').then(r=>r.json());
+    const tbody=document.getElementById('rookies-body');
+    if(!data.rookies?.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px;font-size:11px;">No rookie data available</td></tr>';return;}
+    tbody.innerHTML=data.rookies.map(r=>`
+      <tr>
+        <td><span class="player-name">${r.name}</span><span class="player-team">${r.team}</span></td>
+        <td>${r.avg}</td><td>${r.hr}</td><td>${r.rbi}</td><td>${r.ops}</td>
+      </tr>`).join('');
+  }catch{document.getElementById('rookies-body').innerHTML='<tr><td colspan="5" style="color:#aaa;font-size:11px;padding:8px;">Error loading data</td></tr>';}
+}
+
+async function loadScores(){
+  try{
+    const data=await fetch('/api/mlb/scores').then(r=>r.json());
+    const el=document.getElementById('scores-body');
+    if(!data.scores?.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:16px;font-size:11px;">No games today</div>';return;}
+    el.innerHTML=data.scores.map(g=>{
+      const isLive=g.status.includes('Progress')||g.status.includes('Delay');
+      const isFinal=g.status==='Final';
+      const awayWin=isFinal&&(g.away_score>g.home_score);
+      const homeWin=isFinal&&(g.home_score>g.away_score);
+      const redsClass=g.is_reds?'reds-game':'';
+      return `<div class="score-row ${redsClass}">
+        <div class="score-teams">
+          <div class="score-team">
+            <span class="score-name">${g.away}</span>
+            ${g.away_score!==''?`<span class="score-num${awayWin?' winning':''}">${g.away_score}</span>`:''}
+          </div>
+          <div class="score-team">
+            <span class="score-name">${g.home}</span>
+            ${g.home_score!==''?`<span class="score-num${homeWin?' winning':''}">${g.home_score}</span>`:''}
+          </div>
+        </div>
+        <div class="score-status ${isLive?'score-live':''}">${g.inning||g.status}</div>
+      </div>`;
+    }).join('');
+  }catch{document.getElementById('scores-body').innerHTML='<div style="color:#aaa;font-size:11px;padding:8px;">Error loading scores</div>';}
+}
+
+async function loadRedsSchedule(){
+  try{
+    const data=await fetch('/api/mlb/reds-schedule').then(r=>r.json());
+    const el=document.getElementById('reds-schedule');
+    if(!data.games?.length){el.innerHTML='<div style="text-align:center;color:#aaa;padding:12px;font-size:11px;">No upcoming games</div>';return;}
+    el.innerHTML=data.games.map(g=>{
+      const loc=g.is_home?'<span class="vs-badge">HOME</span>':'<span class="vs-badge">AWAY</span>';
+      let result='';
+      if(g.status==='Final'&&g.reds_score!==null&&g.opp_score!==null){
+        const win=g.reds_score>g.opp_score;
+        result=`<span class="game-result ${win?'w':'l'}">${win?'W':'L'} ${g.reds_score}-${g.opp_score}</span>`;
+      }else if(g.status==='In Progress'){
+        result=`<span class="score-live" style="font-size:10px;font-weight:700;">LIVE</span>`;
+      }else{
+        result=`<span style="font-size:10px;color:#888;">${g.time||'TBD'}</span>`;
+      }
+      return `<div class="game-row">
+        <span class="game-date">${g.date}</span>
+        <div class="game-matchup">
+          <div class="game-opp">${loc} vs ${g.opponent}</div>
+        </div>
+        ${result}
+      </div>`;
+    }).join('');
+  }catch{document.getElementById('reds-schedule').innerHTML='<div style="color:#aaa;font-size:11px;padding:8px;">Error</div>';}
+}
+
+async function loadStandings(){
+  try{
+    const data=await fetch('/api/mlb/standings').then(r=>r.json());
+    const s=data.standings;
+    if(!s||!s.wins)return;
+    document.getElementById('reds-record').innerHTML=`
+      <div class="record-item"><div class="record-val red">${s.wins}-${s.losses}</div><div class="record-lbl">W-L</div></div>
+      <div class="record-item"><div class="record-val">${s.gb||'—'}</div><div class="record-lbl">GB</div></div>
+      <div class="record-item"><div class="record-val">${s.pct||'—'}</div><div class="record-lbl">PCT</div></div>
+      ${s.streak?`<div class="record-item"><div class="record-val" style="font-size:16px;">${s.streak}</div><div class="record-lbl">Streak</div></div>`:''}
+    `;
+  }catch{}
+}
+
+async function loadReleases(){
+  try{
+    const data=await fetch('/api/release-calendar').then(r=>r.json());
+    const el=document.getElementById('release-calendar');
+    const brandClass={'Topps':'brand-topps','Bowman':'brand-bowman','Panini':'brand-panini'};
+    el.innerHTML=data.releases.map(r=>`
+      <div class="release-row">
+        <span class="release-date">${r.date}</span>
+        <span class="release-name">${r.title}${r.hot?'<span class="hot-badge">🔥</span>':''}</span>
+        <span class="release-brand ${brandClass[r.brand]||''}">${r.brand}</span>
+      </div>`).join('');
+  }catch{}
+}
+
+// Load all on init
+loadRookies();
+loadScores();
+loadRedsSchedule();
+loadStandings();
+loadReleases();
+// Refresh scores every 90s
+setInterval(loadScores, 90000);
+</script>
+</body>
+</html>
