@@ -377,5 +377,18 @@ def subscribe():
     save_subs(subs)
     return jsonify({"status": "subscribed"})
 
+@app.route("/api/jordan-prices")
+def jordan_prices():
+    from tools.fetch_jordan import fetch_jordan_grades
+    eights, premium = fetch_jordan_grades()
+    return jsonify({"grades_8plus": eights, "premium": premium})
+
+
+@app.route("/api/megabox-rankings")
+def megabox_rankings():
+    from tools.fetch_topps_megabox import fetch_megabox_rankings
+    return jsonify({"boxes": fetch_megabox_rankings()})
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5051)
