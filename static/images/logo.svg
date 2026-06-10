@@ -2,8 +2,8 @@
   <rect x="0" y="0" width="320" height="80" rx="6" fill="#E31837"/>
   <polygon points="22,40 25,32 32,29 25,26 22,18 19,26 12,29 19,32" fill="#fff" opacity="0.9"/>
   <rect x="36" y="10" width="52" height="60" rx="4" fill="#fff"/>
-  <text x="62" y="55" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#E31837" text-anchor="middle" letter-spacing="-2">JS</text>
+  <text x="62" y="55" font-family="Arial Black, sans-serif" font-size="32" font-weight="900" fill="#E31837" text-anchor="middle" letter-spacing="-2">JS</text>
   <text x="102" y="35" font-family="Arial Black, Impact, sans-serif" font-size="26" font-weight="900" fill="#fff" letter-spacing="3">JSTOUT</text>
-  <text x="102" y="60" font-family="Arial Black, Impact, sans-serif" font-size="18" font-weight="900" fill="#ffcc00" letter-spacing="5">COLLECTIBLES</text>
+  <text x="102" y="60" font-family="Arial Black, Impact, sans-serif" font-size="18" font-weight="900" fill="#ffcc00" letter-spacing="5">COLLECT</text>
   <polygon points="298,40 301,32 308,29 301,26 298,18 295,26 288,29 295,32" fill="#fff" opacity="0.9"/>
 </svg>
